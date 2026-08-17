@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors — from DESIGN.md, do not invent new values */
+  --color-primary: #ffffff;
+  --color-secondary: #a3a3a3;
+  --color-accent: #2563eb;
+  --color-background: #0a0a0a;
+  --color-surface: #171717;
+  --color-text-primary: #f3f4f6;
+  --color-text-secondary: #9ca3af;
+  --color-border: #262626;
+
+  /* Typography */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  --text-display-lg: 64px;
+  --text-body-md: 16px;
+  --text-label-md: 14px;
+
+  /* Spacing */
+  --spacing-base: 8px;
+  --spacing-gap: 24px;
+  --spacing-card-padding: 32px;
+  --spacing-section-padding: 100px;
+
+  /* Radius */
+  --radius-card: 12px;
+  --radius-control: 6px;
+  --radius-pill: 9999px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-primary);
+}
+
+/* Custom cursor dot/ring: only ever shown on fine-pointer, motion-safe environments */
+.cursor-el {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cursor-el {
+    display: block;
+  }
+
+  /* Hide native cursor only where the custom cursor is active */
+  html.custom-cursor-active,
+  html.custom-cursor-active * {
+    cursor: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-el {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.visible-focus:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-control);
+}
