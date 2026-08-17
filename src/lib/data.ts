@@ -119,7 +119,8 @@ export const projects = [
       { value: "0", label: "ESLint / build errors at ship time" },
     ],
     links: {
-      repo: { label: "GitHub", url: "#" }, // TODO: add real link once pushed
+      repo: { label: "GitHub", url: "https://github.com/Hahahappy-cmd/portfolio" },
+      live: "https://www.happyprajapati.space/",
     },
   },
   {
