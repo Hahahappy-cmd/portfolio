@@ -100,6 +100,41 @@ export const experience = [
 // Ordered newest → oldest by start date.
 export const projects = [
   {
+    id: "mindmate",
+    number: "01",
+    name: "MindMate — AI-Powered Mental Wellness Journal",
+    course: "Personal Project",
+    dates: "Nov 2025 - Present",
+    team: "Solo project",
+    tags: [
+      "FastAPI",
+      "PostgreSQL",
+      "Redis",
+      "RQ",
+      "Hugging Face",
+      "PyTorch",
+      "SQLAlchemy",
+      "Alembic",
+      "Pytest"
+    ],
+    summary:
+      "A privacy-focused AI journaling platform that analyzes journal entries using sentiment analysis, transformer-based emotion classification, and semantic theme detection to surface long-term emotional patterns and weekly insights.",
+    architecture: [
+      "FastAPI backend with PostgreSQL persistence, Alembic migrations, JWT authentication, refresh-token rotation, CSRF protection, and user-scoped journal CRUD.",
+      "Asynchronous AI pipeline using Redis and RQ workers to run TextBlob sentiment analysis, a multi-label RoBERTa GoEmotions classifier, and MiniLM semantic embeddings outside the request cycle.",
+      "Long-term analytics layer that aggregates sentiment, emotion trends, recurring themes, rolling averages, and period-over-period comparisons for dashboard and weekly insight views.",
+    ],
+    metrics: [
+      { value: "0.864", label: "micro F1 on emotion-model evaluation fixture" },
+      { value: "56", label: "automated tests passing" },
+      { value: "3", label: "AI/NLP analysis layers: sentiment, emotion & themes" },
+    ],
+    links: {
+      repo: { label: "GitHub", url: "https://github.com/Hahahappy-cmd/MindMate" }, 
+    },
+  },
+
+  {
     id: "portfolio",
     number: "01",
     name: "This Portfolio",
