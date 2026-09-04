@@ -131,12 +131,13 @@ export const projects = [
     ],
     links: {
       repo: { label: "GitHub", url: "https://github.com/Hahahappy-cmd/MindMate" }, 
+      live: "https://mindmate-6pca.onrender.com/"
     },
   },
 
   {
     id: "portfolio",
-    number: "01",
+    number: "02",
     name: "This Portfolio",
     course: "Personal Project",
     dates: "Aug 2026",
@@ -160,7 +161,7 @@ export const projects = [
   },
   {
     id: "compiler",
-    number: "02",
+    number: "03",
     name: "Python-to-MIPS Compiler",
     course: "CPSC 411",
     dates: "Jan 2026 – Apr 2026",
@@ -183,7 +184,7 @@ export const projects = [
   },
   {
     id: "libratech",
-    number: "03",
+    number: "04",
     name: "LibraTech — Library Management System",
     course: "Team Project",
     dates: "Nov 2025 – Dec 2025",
@@ -204,7 +205,7 @@ export const projects = [
   },
   {
     id: "omg",
-    number: "04",
+    number: "05",
     name: "OMG — Online Multiplayer Game Platform",
     course: "Team Initiative",
     dates: "March 2025 – Apr 2025",
@@ -228,7 +229,7 @@ export const projects = [
   },
   {
     id: "trustbuy",
-    number: "05",
+    number: "06",
     name: "TrustBuy — Online Marketplace",
     course: "Full-Stack Application",
     dates: "Jan 2025 – Apr 2025",
