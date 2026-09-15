@@ -15,103 +15,134 @@ export default function Preloader() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    if (done) return;
+
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const previousOverflow = document.body.style.overflow;
+    const warp = { speed: 0.5 };
+    let stopCanvas = () => {};
+    const finish = () => {
+      stopCanvas();
+      document.body.style.overflow = previousOverflow;
+      setDone(true);
+    };
+
+    // Defer removal to the next GSAP tick; reduced motion never starts a canvas loop.
+    if (motionQuery.matches) {
+      const skip = gsap.delayedCall(0, finish);
+      return () => skip.kill();
+    }
+
     document.body.style.overflow = "hidden";
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    // Starfield Canvas Animation Setup
     const canvas = canvasRef.current;
-    let animationFrameId: number;
-    if (canvas && !reduced) {
-      const ctx = canvas.getContext("2d");
-      let w = (canvas.width = window.innerWidth);
-      let h = (canvas.height = window.innerHeight);
+    const ctx = canvas?.getContext("2d");
 
-      const handleResize = () => {
-        if (!canvas) return;
-        w = canvas.width = window.innerWidth;
-        h = canvas.height = window.innerHeight;
+    if (canvas && ctx) {
+      type Star = { x: number; y: number; z: number; brightness: number; size: number };
+      const depth = 1000;
+      const near = 12;
+      let width = 0;
+      let height = 0;
+      let focalLength = 0;
+      let stars: Star[] = [];
+      let frameId = 0;
+      let lastTime: number | undefined;
+      let stopped = false;
+
+      const resetStar = (star: Star, z = depth) => {
+        star.x = (Math.random() - 0.5) * width * depth / focalLength;
+        star.y = (Math.random() - 0.5) * height * depth / focalLength;
+        star.z = z;
       };
-      window.addEventListener("resize", handleResize);
 
-      const numStars = 400;
-      const stars: { x: number; y: number; z: number; size: number }[] = [];
-
-      for (let i = 0; i < numStars; i++) {
-        stars.push({
-          x: (Math.random() - 0.5) * w * 2,
-          y: (Math.random() - 0.5) * h * 2,
-          z: Math.random() * w,
-          size: Math.random() * 1.5,
+      const resize = () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        focalLength = Math.min(width, height) * 0.7;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.strokeStyle = "#ffffff";
+        ctx.fillStyle = "#ffffff";
+        ctx.lineCap = "round";
+        const count = Math.round(Math.min(400, Math.max(120, width * height / 3000)));
+        stars = Array.from({ length: count }, () => {
+          const star = { x: 0, y: 0, z: 0, brightness: 0.35 + Math.random() * 0.65, size: 0.5 + Math.random() * 0.5 };
+          resetStar(star, near + Math.random() * (depth - near));
+          return star;
         });
-      }
+        lastTime = undefined;
+      };
 
-      let speed = 0.5; // Normal drift speed
+      const render = (time: number) => {
+        if (stopped) return;
+        // Speeds are depth units per 60 Hz frame, independent of display refresh rate.
+        const delta = lastTime === undefined ? 1 : Math.min((time - lastTime) / (1000 / 60), 2);
+        lastTime = time;
+        ctx.clearRect(0, 0, width, height);
 
-      const render = () => {
-        if (!ctx) return;
-        ctx.fillStyle = "rgba(10, 10, 10, 0.3)"; // Creates motion trail
-        ctx.fillRect(0, 0, w, h);
-
-        const cx = w / 2;
-        const cy = h / 2;
-
-        ctx.fillStyle = "#FFFFFF";
-        stars.forEach((star) => {
-          star.z -= speed;
-          if (star.z <= 0) {
-            star.z = w;
-            star.x = (Math.random() - 0.5) * w * 2;
-            star.y = (Math.random() - 0.5) * h * 2;
+        for (const star of stars) {
+          star.z -= warp.speed * delta;
+          if (star.z <= near) {
+            resetStar(star);
+            continue;
           }
 
-          const k = 250 / star.z;
-          const px = star.x * k + cx;
-          const py = star.y * k + cy;
-
-          if (px >= 0 && px <= w && py >= 0 && py <= h) {
-            const pSize = Math.max(1, star.size * k * (speed * 0.8));
-            ctx.fillRect(px, py, pSize, pSize);
+          const scale = focalLength / star.z;
+          const x = width / 2 + star.x * scale;
+          const y = height / 2 + star.y * scale;
+          // A short virtual shutter exposure gives continuous trails at any refresh rate.
+          // Both endpoints use the same x/y ray, so every streak points at the center.
+          const previousZ = Math.min(depth, star.z + warp.speed * 2.5);
+          const previousScale = focalLength / previousZ;
+          const previousX = width / 2 + star.x * previousScale;
+          const previousY = height / 2 + star.y * previousScale;
+          const tailOutside = previousX < 0 || previousX > width || previousY < 0 || previousY > height;
+          if (tailOutside) {
+            resetStar(star);
+            continue;
           }
-        });
 
-        animationFrameId = requestAnimationFrame(render);
+          const proximity = 1 - star.z / depth;
+          ctx.globalAlpha = star.brightness * (0.35 + proximity * 0.65);
+          ctx.lineWidth = star.size * (0.65 + proximity * 0.5);
+          if (Math.hypot(x - previousX, y - previousY) < 0.75) {
+            ctx.beginPath();
+            ctx.arc(x, y, ctx.lineWidth * 0.65, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.beginPath();
+            ctx.moveTo(previousX, previousY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+          }
+        }
+
+        frameId = requestAnimationFrame(render);
       };
 
-      render();
-
-      (canvas as any).warpControl = {
-        get speed() {
-          return speed;
-        },
-        set speed(val: number) {
-          speed = val;
-        },
+      const onVisibility = () => {
+        cancelAnimationFrame(frameId);
+        lastTime = undefined;
+        if (!stopped && !document.hidden) frameId = requestAnimationFrame(render);
       };
-
-      return () => {
-        window.removeEventListener("resize", handleResize);
-        cancelAnimationFrame(animationFrameId);
+      resize();
+      window.addEventListener("resize", resize);
+      document.addEventListener("visibilitychange", onVisibility);
+      if (!document.hidden) frameId = requestAnimationFrame(render);
+      stopCanvas = () => {
+        stopped = true;
+        cancelAnimationFrame(frameId);
+        window.removeEventListener("resize", resize);
+        document.removeEventListener("visibilitychange", onVisibility);
       };
     }
-  }, []);
 
-  useEffect(() => {
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    const ctx = gsap.context(() => {
-      if (reduced) {
-        gsap.set(overlayRef.current, { autoAlpha: 0 });
-        document.body.style.overflow = "";
-        setDone(true);
-        return;
-      }
-
-      const tl = gsap.timeline({
-        onComplete: () => {
-          document.body.style.overflow = "";
-          setDone(true);
-        },
-      });
+    const context = gsap.context(() => {
+      const tl = gsap.timeline({ onComplete: finish });
 
       tl.fromTo(
         eyebrowRef.current,
@@ -140,7 +171,7 @@ export default function Preloader() {
         }
       });
 
-      // EXTENDED Warp Speed Hyperspace Launch Sequence
+      // Keep the existing launch/fade timing while smoothly accelerating the stars.
       tl.to(
         wordRef.current,
         { opacity: 0, scale: 1.3, filter: "blur(16px)", duration: 0.5, ease: "power2.in" },
@@ -151,16 +182,12 @@ export default function Preloader() {
         { opacity: 0, duration: 0.3 },
         "warp"
       )
+      .to(warp, { speed: 50, duration: 0.8, ease: "power2.in" }, "warp+=0.1")
       .to(
         canvasRef.current,
         {
-          onStart: () => {
-            if (canvasRef.current && (canvasRef.current as any).warpControl) {
-              (canvasRef.current as any).warpControl.speed = 50; // Increased speed multiplier
-            }
-          },
           opacity: 0,
-          duration: 1.2, // Extended from 0.6 to 1.2 seconds for a longer warp effect
+          duration: 1.2,
           ease: "power3.inOut",
         },
         "warp+=0.1"
@@ -168,19 +195,32 @@ export default function Preloader() {
       .to(
         overlayRef.current,
         { autoAlpha: 0, duration: 0.3 },
-        "warp+=0.9" // Delays final cleanup to match the longer duration
+        "warp+=0.9"
       );
-    });
+    }, overlayRef);
 
-    return () => ctx.revert();
-  }, []);
+    const onMotionChange = () => {
+      if (motionQuery.matches) {
+        context.revert();
+        finish();
+      }
+    };
+    motionQuery.addEventListener("change", onMotionChange);
+
+    return () => {
+      stopCanvas();
+      context.revert();
+      motionQuery.removeEventListener("change", onMotionChange);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [done]);
 
   if (done) return null;
 
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-background overflow-hidden"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-background overflow-hidden motion-reduce:hidden"
       aria-hidden
     >
       <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-10" />
