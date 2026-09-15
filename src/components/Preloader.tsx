@@ -68,9 +68,9 @@ export default function Preloader() {
         ctx.strokeStyle = "#ffffff";
         ctx.fillStyle = "#ffffff";
         ctx.lineCap = "round";
-        const count = Math.round(Math.min(400, Math.max(120, width * height / 3000)));
+        const count = Math.round(Math.min(600, Math.max(150, width * height / 2400)));
         stars = Array.from({ length: count }, () => {
-          const star = { x: 0, y: 0, z: 0, brightness: 0.35 + Math.random() * 0.65, size: 0.5 + Math.random() * 0.5 };
+          const star = { x: 0, y: 0, z: 0, brightness: 0.75, size: 1 };
           resetStar(star, near + Math.random() * (depth - near));
           return star;
         });
@@ -171,7 +171,7 @@ export default function Preloader() {
         }
       });
 
-      // Keep the existing launch/fade timing while smoothly accelerating the stars.
+      // Keep the smooth launch, then hold the starfield two seconds longer before fading.
       tl.to(
         wordRef.current,
         { opacity: 0, scale: 1.3, filter: "blur(16px)", duration: 0.5, ease: "power2.in" },
@@ -190,12 +190,12 @@ export default function Preloader() {
           duration: 1.2,
           ease: "power3.inOut",
         },
-        "warp+=0.1"
+        "warp+=1.7"
       )
       .to(
         overlayRef.current,
         { autoAlpha: 0, duration: 0.3 },
-        "warp+=0.9"
+        "warp+=1.7"
       );
     }, overlayRef);
 
